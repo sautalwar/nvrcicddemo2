@@ -206,10 +206,6 @@ jobs:
             if rid in txt:
               print(f"Proof: found '{rid}' in tabular rules file after patch")
           PY
-        env:
-          DISABLE_RULE_IDS: ${{ env.DISABLE_RULE_IDS }}
-          TABULAR_RULES_PATH: ${{ steps.rules.outputs.tabularRules }}
-          PBI_RULES_PATH: ${{ steps.rules.outputs.pbiRules }}
 
       - name: Run Tabular Editor BPA (Semantic Models)
         shell: bash
