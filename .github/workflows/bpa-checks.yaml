@@ -128,7 +128,7 @@ jobs:
           echo "PBI rules:     ${PBI_RULES}"
 
       - name: Setup Python (only used to toggle rules for demos)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.disable_rule_ids != '' }}id
+        if: ${{ env.DISABLE_RULE_IDS != '' }}
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
