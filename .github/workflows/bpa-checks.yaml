@@ -108,8 +108,8 @@ jobs:
             echo "Repo Tabular rules not found; using defaultRules.json"
             TABULAR_RULES="${TABULAR_DIR}/defaultRules.json"
           fi
-          echo "Using Tabular rules file: ${RULES}"
-          ls -la "${RULES}" || true
+          echo "Using Tabular rules file: ${TABULAR_RULES}"
+          ls -la "${TABULAR_RULES}" || true
 
           PBI_RULES="${REPO_PBI_RULES}"
           if [ ! -f "${PBI_RULES}" ]; then
