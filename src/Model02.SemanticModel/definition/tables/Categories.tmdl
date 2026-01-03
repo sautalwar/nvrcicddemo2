@@ -2,6 +2,7 @@ table Categories
 	lineageTag: 99508c15-e8e6-42d8-871b-35fabdada4c1
 
 	measure 'Category Title' = SELECTEDVALUE(Categories[CategoryName], DISTINCTCOUNT(Categories[CategoryName]) & " Selected")
+		formatString: 0
 		lineageTag: 4167b6a7-9764-4836-9274-9278af7097a4
 
 	column CategoryID

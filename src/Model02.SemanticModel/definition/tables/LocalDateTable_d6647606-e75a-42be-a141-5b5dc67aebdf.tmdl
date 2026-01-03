@@ -4,6 +4,7 @@ table LocalDateTable_d6647606-e75a-42be-a141-5b5dc67aebdf
 	lineageTag: b5281de1-e99d-4c24-800d-9d012c89124a
 
 	column Date
+		dataType: dateTime
 		isHidden
 		lineageTag: 87991738-8980-4d7a-9956-a70f21917d59
 		dataCategory: PaddedDateTableDates

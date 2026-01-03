@@ -35,7 +35,7 @@ table Order_Details
 		dataType: double
 		formatString: \$#,0;(\$#,0);\$#,0
 		lineageTag: f9318c2f-aa6d-4cbc-93ab-a72cbf206f94
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: UnitPrice
 
 		annotation SummarizationSetBy = Automatic
@@ -46,7 +46,7 @@ table Order_Details
 		dataType: int64
 		formatString: 0
 		lineageTag: 74a261be-ad42-4044-a491-30675a3d4a52
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Quantity
 
 		annotation SummarizationSetBy = Automatic
@@ -54,7 +54,7 @@ table Order_Details
 	column Discount
 		dataType: double
 		lineageTag: e6ca9cf4-89aa-429f-9cad-416961fb4e43
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Discount
 
 		annotation SummarizationSetBy = Automatic
