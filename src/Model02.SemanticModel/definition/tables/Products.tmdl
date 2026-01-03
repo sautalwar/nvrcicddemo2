@@ -53,7 +53,7 @@ table Products
 	column UnitPrice
 		dataType: double
 		lineageTag: 99dbd2cb-d908-495e-92f5-12883a42c14d
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: UnitPrice
 
 		annotation SummarizationSetBy = Automatic
@@ -64,7 +64,7 @@ table Products
 		dataType: int64
 		formatString: 0
 		lineageTag: 966114c6-07c9-4af0-aacf-a53dfb4732f2
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: UnitsInStock
 
 		annotation SummarizationSetBy = Automatic
@@ -73,7 +73,7 @@ table Products
 		dataType: int64
 		formatString: 0
 		lineageTag: 19943096-7d25-44e5-92d2-0ca52ae53d22
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: UnitsOnOrder
 
 		annotation SummarizationSetBy = Automatic
@@ -82,7 +82,7 @@ table Products
 		dataType: int64
 		formatString: 0
 		lineageTag: d4170b6b-0a1b-4a2a-af61-c273023340d8
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: ReorderLevel
 
 		annotation SummarizationSetBy = Automatic
