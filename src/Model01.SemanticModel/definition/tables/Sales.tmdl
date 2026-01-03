@@ -289,7 +289,7 @@ table Sales
 		dataType: decimal
 		formatString: "€"#,0.###############;("€"#,0.###############);"€"#,0.###############
 		lineageTag: a190bb72-9254-4740-b536-2c016eef5c07
-		summarizeBy: sum
+		summarizeBy: none
 		sourceColumn: Net Price
 
 		annotation SummarizationSetBy = Automatic
