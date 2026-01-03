@@ -5,7 +5,7 @@ table Population-country-1950-1999
 		dataType: int64
 		formatString: 0
 		lineageTag: 11dda02a-4c2d-4f21-ad68-cd32aead10f4
-		summarizeBy: count
+		summarizeBy: none
 		sourceColumn: LocID
 
 		annotation SummarizationSetBy = Automatic
