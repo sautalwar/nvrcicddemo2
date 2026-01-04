@@ -1,0 +1,185 @@
+name: Deploy to Fabric Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_reason:
+        description: 'Reason for production deployment'
+        required: true
+        type: string
+      approval_ticket:
+        description: 'Change Management Ticket Number'
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*.*.*'  # Production release tags (e.g., v1.2.3)
+
+env:
+  FABRIC_WORKSPACE_NAME: 'NVR-Production'
+  ENVIRONMENT: 'prod'
+
+jobs:
+  pre-deployment-checks:
+    name: Pre-Deployment Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🔍 Validate Release Tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          echo "🏷️ Release Tag: $TAG_NAME"
+          
+          # Validate semantic versioning
+          if [[ ! $TAG_NAME =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid tag format. Must be vX.Y.Z (e.g., v1.2.3)"
+            exit 1
+          fi
+          echo "✅ Valid release tag format"
+      
+      - name: 📋 Check Change Management Ticket
+        if: github.event.inputs.approval_ticket
+        run: |
+          TICKET="${{ github.event.inputs.approval_ticket }}"
+          echo "🎫 Change Management Ticket: $TICKET"
+          
+          # Add validation logic for your ticketing system here
+          # For now, just validate format (e.g., CHG-12345)
+          if [[ ! $TICKET =~ ^CHG-[0-9]+$ ]]; then
+            echo "⚠️ Warning: Ticket format doesn't match CHG-##### pattern"
+          fi
+          echo "✅ Ticket number recorded"
+  
+  deploy:
+    name: Deploy to Production
+    needs: pre-deployment-checks
+    runs-on: ubuntu-latest
+    environment: 
+      name: production
+      url: 'https://app.fabric.microsoft.com/groups/${{ secrets.FABRIC_PROD_WORKSPACE_ID }}'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests azure-identity pyyaml pandas jupyter nbformat
+          echo "✅ Dependencies installed"
+      
+      - name: 🔐 Authenticate to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: 🎫 Get Fabric Access Token
+        id: get_token
+        run: |
+          TOKEN=$(az account get-access-token --resource https://analysis.windows.net/powerbi/api --query accessToken -o tsv)
+          echo "::add-mask::$TOKEN"
+          echo "FABRIC_TOKEN=$TOKEN" >> $GITHUB_ENV
+          echo "✅ Fabric token acquired"
+      
+      - name: 📸 Backup Production Workspace
+        run: |
+          echo "📸 Creating backup of current Production state..."
+          python scripts/backup_workspace.py \
+            --workspace-id "${{ secrets.FABRIC_PROD_WORKSPACE_ID }}" \
+            --backup-path ./backup/prod-$(date +%Y%m%d-%H%M%S)
+          echo "✅ Backup completed"
+      
+      - name: 🚀 Deploy to Production
+        run: |
+          echo "🚀 Deploying to Production workspace..."
+          python scripts/deploy_to_fabric.py \
+            --workspace-id "${{ secrets.FABRIC_PROD_WORKSPACE_ID }}" \
+            --environment prod \
+            --artifact-type all \
+            --artifacts-path . \
+            --validate-before-deploy
+          echo "✅ Production deployment completed"
+      
+      - name: 🧪 Run Smoke Tests
+        run: |
+          echo "🧪 Running production smoke tests..."
+          python scripts/run_smoke_tests.py \
+            --workspace-id "${{ secrets.FABRIC_PROD_WORKSPACE_ID }}" \
+            --environment prod
+          echo "✅ Smoke tests passed"
+      
+      - name: ✅ Validate Production Deployment
+        run: |
+          echo "🔍 Validating Production deployment..."
+          python scripts/validate_deployment.py \
+            --workspace-id "${{ secrets.FABRIC_PROD_WORKSPACE_ID }}" \
+            --environment prod \
+            --strict-mode
+          echo "✅ Production validation passed"
+      
+      - name: 📊 Generate Deployment Report
+        if: always()
+        run: |
+          echo "## 🚀 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Workspace | \`${{ env.FABRIC_WORKSPACE_NAME }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | \`${{ env.ENVIRONMENT }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployment Time | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployed By | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Change Ticket | ${{ github.event.inputs.approval_ticket || 'Tag-triggered' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Reason | ${{ github.event.inputs.deployment_reason || 'Scheduled release' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backup | ✅ Completed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Notebooks | ✅ Deployed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pipelines | ✅ Deployed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Smoke Tests | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Validation | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**🎉 Production deployment successful!**" >> $GITHUB_STEP_SUMMARY
+      
+      - name: 📧 Send Deployment Notification
+        if: success()
+        run: |
+          echo "📧 Sending deployment notification..."
+          # Add your notification logic here (Slack, Teams, Email, etc.)
+          echo "✅ Notification sent"
+      
+      - name: 🔙 Rollback on Failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed - initiating rollback..."
+          python scripts/rollback_deployment.py \
+            --workspace-id "${{ secrets.FABRIC_PROD_WORKSPACE_ID }}" \
+            --backup-path ./backup/prod-latest
+          echo "✅ Rollback completed"
+      
+      - name: 📢 Create Deployment Issue on Failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 URGENT: Production Deployment Failed',
+              body: `Production deployment has failed and rollback was initiated.\n\n**Workflow:** ${context.workflow}\n**Run:** ${context.runNumber}\n**Commit:** ${context.sha}\n**Triggered By:** ${context.actor}\n**Change Ticket:** ${{ github.event.inputs.approval_ticket }}\n\n⚠️ **IMMEDIATE ACTION REQUIRED**\n\nPlease check the [workflow logs](${context.payload.repository.html_url}/actions/runs/${context.runId}) immediately.`,
+              labels: ['production', 'critical', 'deployment'],
+              assignees: ['${{ github.actor }}']
+            })

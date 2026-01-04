@@ -1,0 +1,55 @@
+# Sample pipeline definition
+{
+  "name": "Customer Analytics Pipeline",
+  "properties": {
+    "description": "ETL pipeline for customer analytics",
+    "activities": [
+      {
+        "name": "IngestData",
+        "type": "Notebook",
+        "description": "Ingest customer data from source systems",
+        "typeProperties": {
+          "notebook": "data_ingestion",
+          "parameters": {
+            "source_date": {
+              "value": "@pipeline().parameters.processingDate",
+              "type": "Expression"
+            }
+          }
+        }
+      },
+      {
+        "name": "TrainModel",
+        "type": "Notebook",
+        "description": "Train churn prediction model",
+        "dependsOn": [
+          {
+            "activity": "IngestData",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "typeProperties": {
+          "notebook": "model_training",
+          "parameters": {
+            "model_version": {
+              "value": "@pipeline().parameters.modelVersion",
+              "type": "Expression"
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "processingDate": {
+        "type": "String",
+        "defaultValue": "@utcnow()"
+      },
+      "modelVersion": {
+        "type": "String",
+        "defaultValue": "1.0"
+      }
+    }
+  }
+}

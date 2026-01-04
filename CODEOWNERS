@@ -1,0 +1,19 @@
+# Code Owners - Require approval from these users for changes
+
+# Global owners
+* @nvr-devops-team
+
+# Notebooks require Data Science lead approval
+/notebooks/ @nvr-ds-lead @nvr-devops-team
+
+# Pipelines require both DS and DevOps approval
+/pipelines/ @nvr-ds-lead @nvr-devops-team
+
+# Workflows require DevOps approval only
+/.github/workflows/ @nvr-devops-team
+
+# Scripts require code review from DevOps
+/scripts/ @nvr-devops-team
+
+# Configuration changes require manager approval
+/config/prod.yml @nvr-manager @nvr-devops-team

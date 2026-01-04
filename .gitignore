@@ -1,6 +1,63 @@
-**/.pbi/localSettings.json
-**/.pbi/cache.abf
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-fabric_cicd.*.log
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
 
-_tools/
+# VS Code
+.vscode/
+*.code-workspace
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Backup files
+backup/
+*.backup
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Fabric
+*.pbix
+*.pbit
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Temporary files
+*.tmp
+*.temp
+~$*

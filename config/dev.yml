@@ -1,0 +1,15 @@
+# Development environment configuration
+workspace:
+  name: "NVR-Dev"
+  environment: "dev"
+
+deployment:
+  auto_deploy_on_merge: true
+  require_validation: true
+  run_tests: true
+
+notifications:
+  enabled: true
+  channels:
+    - slack
+    - email

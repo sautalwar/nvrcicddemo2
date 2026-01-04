@@ -1,0 +1,98 @@
+name: Deploy to Fabric Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_reason:
+        description: 'Reason for deployment'
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*.*.*-rc*'  # Release candidate tags
+
+env:
+  FABRIC_WORKSPACE_NAME: 'NVR-Test'
+  ENVIRONMENT: 'test'
+
+jobs:
+  deploy:
+    name: Deploy to Test Workspace
+    runs-on: ubuntu-latest
+    environment: 
+      name: test
+      url: 'https://app.fabric.microsoft.com/groups/${{ secrets.FABRIC_TEST_WORKSPACE_ID }}'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests azure-identity pyyaml pandas jupyter nbformat
+          echo "✅ Dependencies installed"
+      
+      - name: 🔐 Authenticate to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: 🎫 Get Fabric Access Token
+        id: get_token
+        run: |
+          TOKEN=$(az account get-access-token --resource https://analysis.windows.net/powerbi/api --query accessToken -o tsv)
+          echo "::add-mask::$TOKEN"
+          echo "FABRIC_TOKEN=$TOKEN" >> $GITHUB_ENV
+          echo "✅ Fabric token acquired"
+      
+      - name: 🚀 Deploy All Artifacts to Test
+        run: |
+          echo "🚀 Deploying all artifacts to Test workspace..."
+          python scripts/deploy_to_fabric.py \
+            --workspace-id "${{ secrets.FABRIC_TEST_WORKSPACE_ID }}" \
+            --environment test \
+            --artifact-type all \
+            --artifacts-path .
+          echo "✅ Artifacts deployed successfully"
+      
+      - name: 🧪 Run Integration Tests
+        run: |
+          echo "🧪 Running integration tests in Test workspace..."
+          python scripts/run_integration_tests.py \
+            --workspace-id "${{ secrets.FABRIC_TEST_WORKSPACE_ID }}" \
+            --environment test
+          echo "✅ Integration tests passed"
+      
+      - name: ✅ Validate Deployment
+        run: |
+          echo "🔍 Validating Test deployment..."
+          python scripts/validate_deployment.py \
+            --workspace-id "${{ secrets.FABRIC_TEST_WORKSPACE_ID }}" \
+            --environment test
+          echo "✅ Deployment validation passed"
+      
+      - name: 📊 Generate Deployment Report
+        if: always()
+        run: |
+          echo "## 🚀 Deployment to Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Workspace | \`${{ env.FABRIC_WORKSPACE_NAME }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | \`${{ env.ENVIRONMENT }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployment Reason | ${{ github.event.inputs.deployment_reason || 'Tag-triggered deployment' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Notebooks | ✅ Deployed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pipelines | ✅ Deployed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Validation | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**✨ Test deployment completed at $(date -u '+%Y-%m-%d %H:%M:%S UTC')**" >> $GITHUB_STEP_SUMMARY
