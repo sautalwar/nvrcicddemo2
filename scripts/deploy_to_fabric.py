@@ -143,7 +143,9 @@ class FabricDeployer:
             
             response = requests.post(url, headers=self.headers, json=payload, timeout=60)
             
-            if response.status_code in [200, 201]:
+            if response.status_code in [200, 201, 202]:
+                if response.status_code == 202:
+                    print(f"  ⏳ Notebook creation accepted (processing asynchronously)")
                 return True
             else:
                 print(f"  ❌ API Error: {response.status_code} - {response.text}")
@@ -173,7 +175,9 @@ class FabricDeployer:
             
             response = requests.post(url, headers=self.headers, json=payload, timeout=60)
             
-            if response.status_code in [200, 202]:
+            if response.status_code in [200, 201, 202]:
+                if response.status_code == 202:
+                    print(f"  ⏳ Notebook update accepted (processing asynchronously)")
                 return True
             else:
                 print(f"  ❌ API Error: {response.status_code} - {response.text}")
