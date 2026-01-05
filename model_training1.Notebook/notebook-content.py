@@ -1,0 +1,233 @@
+# Fabric notebook source
+
+# METADATA ********************
+
+# META {
+# META   "kernel_info": {
+# META     "name": "synapse_pyspark"
+# META   }
+# META }
+
+# CELL ********************
+
+# Import libraries
+import pandas as pd
+import numpy as np
+from datetime import datetime
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import mlflow
+import mlflow.sklearn
+
+print("✅ Libraries imported successfully")
+print(f"📅 Training started at: {datetime.now()}")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# Load training data from Silver layer
+DATA_PATH = "Files/silver/customer_features"
+
+# Simulating data load - replace with actual Fabric lakehouse path
+print(f"📂 Loading data from: {DATA_PATH}")
+
+# For demo purposes, generate sample data
+np.random.seed(42)
+n_samples = 10000
+
+data = pd.DataFrame({
+    'customer_id': range(1, n_samples + 1),
+    'total_purchases': np.random.randint(1, 50, n_samples),
+    'avg_purchase_value': np.random.uniform(10, 500, n_samples),
+    'days_since_last_purchase': np.random.randint(0, 365, n_samples),
+    'customer_age_days': np.random.randint(30, 1825, n_samples),
+    'support_tickets': np.random.randint(0, 10, n_samples),
+    'churn': np.random.choice([0, 1], n_samples, p=[0.7, 0.3])
+})
+
+print(f"✅ Loaded {len(data)} customer records")
+print(f"\n📊 Dataset shape: {data.shape}")
+print(f"\n🎯 Churn distribution:\n{data['churn'].value_counts()}")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# Feature engineering
+print("🔧 Engineering features...")
+
+data['purchase_frequency'] = data['total_purchases'] / (data['customer_age_days'] / 30)
+data['engagement_score'] = (data['total_purchases'] * data['avg_purchase_value']) / data['customer_age_days']
+data['recency_score'] = 1 / (data['days_since_last_purchase'] + 1)
+
+feature_columns = [
+    'total_purchases', 'avg_purchase_value', 'days_since_last_purchase',
+    'customer_age_days', 'support_tickets', 'purchase_frequency',
+    'engagement_score', 'recency_score'
+]
+
+X = data[feature_columns]
+y = data['churn']
+
+print(f"✅ Features prepared: {len(feature_columns)} features")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+print(f"📊 Training set: {len(X_train)} samples")
+print(f"📊 Test set: {len(X_test)} samples")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# Model training with MLflow tracking
+print("\n🤖 Training Random Forest model...")
+
+mlflow.set_experiment("NVR_Customer_Churn_Prediction")
+
+with mlflow.start_run(run_name=f"rf_model_{datetime.now().strftime('%Y%m%d_%H%M%S')}"):
+    # Model parameters
+    params = {
+        'n_estimators': 100,
+        'max_depth': 10,
+        'min_samples_split': 5,
+        'random_state': 42
+    }
+    
+    # Log parameters
+    mlflow.log_params(params)
+    
+    # Train model
+    model = RandomForestClassifier(**params)
+    model.fit(X_train, y_train)
+    
+    print("✅ Model training completed")
+    
+    # Make predictions
+    y_pred = model.predict(X_test)
+    
+    # Calculate metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    
+    # Log metrics
+    mlflow.log_metric("accuracy", accuracy)
+    mlflow.log_metric("precision", precision)
+    mlflow.log_metric("recall", recall)
+    mlflow.log_metric("f1_score", f1)
+    
+    # Log model
+    mlflow.sklearn.log_model(model, "random_forest_model")
+    
+    print("\n📊 Model Performance Metrics:")
+    print("=" * 40)
+    print(f"  Accuracy:  {accuracy:.4f}")
+    print(f"  Precision: {precision:.4f}")
+    print(f"  Recall:    {recall:.4f}")
+    print(f"  F1 Score:  {f1:.4f}")
+    print("=" * 40)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# Feature importance analysis
+print("\n🔍 Feature Importance:")
+print("=" * 40)
+
+feature_importance = pd.DataFrame({
+    'feature': feature_columns,
+    'importance': model.feature_importances_
+}).sort_values('importance', ascending=False)
+
+for idx, row in feature_importance.iterrows():
+    print(f"  {row['feature']:30s} {row['importance']:.4f}")
+
+print("=" * 40)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+# Model validation summary
+print("\n✅ Model Training Pipeline Completed")
+print("=" * 50)
+print(f"  Model Type: Random Forest Classifier")
+print(f"  Training Samples: {len(X_train)}")
+print(f"  Test Samples: {len(X_test)}")
+print(f"  Features: {len(feature_columns)}")
+print(f"  Model Accuracy: {accuracy:.2%}")
+print(f"  Completed at: {datetime.now()}")
+print("=" * 50)
+print("\n🚀 Model ready for deployment!")
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+import os
+from datetime import datetime
+# Enhanced logging for production monitoring
+print("=" * 50)
+print("🚀 Model Training v2.0 - Enhanced Logging")
+print("=" * 50)
+print(f"Training started: {datetime.now()}")
+print(f"Environment: {os.environ.get('ENVIRONMENT', 'dev')}")
+print(f"Model version: 2.0")
+print("=" * 50)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
