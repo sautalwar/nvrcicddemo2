@@ -124,19 +124,28 @@ class FabricDeploymentPipeline:
             response = requests.post(url, headers=self.headers, json=payload)
             response.raise_for_status()
             
+            # Check if response has content
+            if not response.content:
+                print(f"⚠️ API returned empty response (status {response.status_code})")
+                print(f"✅ Deployment request accepted (no operation ID returned)")
+                return True
+            
             deployment = response.json()
             operation_id = deployment.get('operationId')
             
-            print(f"✅ Deployment initiated (Operation ID: {operation_id})")
-            
-            if wait and operation_id:
-                return self._wait_for_deployment(operation_id, target_name)
+            if operation_id:
+                print(f"✅ Deployment initiated (Operation ID: {operation_id})")
+                if wait:
+                    return self._wait_for_deployment(operation_id, target_name)
+            else:
+                print(f"✅ Deployment initiated (no operation tracking available)")
             
             return True
             
         except requests.exceptions.RequestException as e:
             print(f"❌ Deployment failed: {e}")
-            if hasattr(e.response, 'text'):
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"Status Code: {e.response.status_code}")
                 print(f"Response: {e.response.text}")
             return False
 
