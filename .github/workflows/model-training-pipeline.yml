@@ -214,6 +214,25 @@ jobs:
             --artifacts-path pipelines/customer_analytics_pipeline.json
           echo "✅ Pipeline deployed to DEV"
       
+      - name: 🎯 Trigger Fabric Deployment Pipeline (DEV stage)
+        continue-on-error: true
+        run: |
+          echo "🎯 Triggering Fabric Deployment Pipeline to promote artifacts..."
+          
+          # Install PowerShell dependencies
+          pwsh -Command "Install-Module -Name MicrosoftPowerBIMgmt -Force -Scope CurrentUser -AllowClobber" || true
+          
+          # Note: This uses the Fabric Deployment Pipeline you created in the UI
+          # It automatically promotes notebooks/pipelines from Dev → Test → Prod
+          
+          # Trigger deployment (if pipeline exists)
+          pwsh scripts/trigger-fabric-deployment-pipeline.ps1 \
+            -WorkspaceId "${{ secrets.FABRIC_DEV_WORKSPACE_ID }}" \
+            -PipelineName "pipeline1" \
+            -TargetStage "Test" \
+            -Note "Automated deployment from GitHub Actions - Commit ${{ github.sha }}" \
+            -WaitForCompletion || echo "⚠️ Fabric deployment pipeline not configured yet"
+      
       - name: ✅ Run smoke tests
         run: |
           echo "🧪 Running smoke tests in DEV..."
