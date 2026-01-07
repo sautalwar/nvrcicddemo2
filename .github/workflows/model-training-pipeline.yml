@@ -294,7 +294,7 @@ jobs:
       - name: 🔐 Authenticate to Azure
         uses: azure/login@v2
         with:
-          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       
       - name: 🎫 Get Fabric Access Token
         run: |
@@ -303,30 +303,23 @@ jobs:
           echo "FABRIC_TOKEN=$TOKEN" >> $GITHUB_ENV
           echo "✅ Fabric token acquired"
       
-      - name: 🚀 Deploy to TEST workspace
+      - name: 🚀 Promote DEV → TEST via Fabric Deployment Pipeline
         id: deploy
         run: |
-          echo "🚀 Deploying to TEST workspace..."
+          echo "🚀 Promoting from DEV to TEST via Fabric Deployment Pipeline..."
           echo "📋 Deployment reason: ${{ github.event.inputs.deployment_reason }}"
           
           DEPLOYMENT_ID="test-$(date +%Y%m%d-%H%M%S)"
           echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
           
-          # Deploy notebook
-          python scripts/deploy_to_fabric.py \
-            --workspace-id "${{ secrets.FABRIC_TEST_WORKSPACE_ID }}" \
-            --environment test \
-            --artifact-type notebooks \
-            --artifacts-path ${{ env.NOTEBOOK_PATH }}
+          # Use Fabric Deployment Pipeline to promote Dev (0) → Test (1)
+          python scripts/trigger_fabric_deployment_pipeline.py \
+            --pipeline-id "${{ secrets.FABRIC_DEPLOYMENT_PIPELINE_ID }}" \
+            --source-stage 0 \
+            --target-stage 1 \
+            --note "${{ github.event.inputs.deployment_reason }} (Commit: ${{ github.sha }})"
           
-          # Deploy pipeline
-          python scripts/deploy_to_fabric.py \
-            --workspace-id "${{ secrets.FABRIC_TEST_WORKSPACE_ID }}" \
-            --environment test \
-            --artifact-type pipelines \
-            --artifacts-path pipelines/customer_analytics_pipeline.json
-          
-          echo "✅ All artifacts deployed to TEST"
+          echo "✅ Promoted to TEST via Fabric deployment pipeline"
       
       - name: 🔍 Data quality validation
         run: |
@@ -414,7 +407,7 @@ jobs:
       - name: 🔐 Authenticate to Azure
         uses: azure/login@v2
         with:
-          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       
       - name: 🎫 Get Fabric Access Token
         run: |
@@ -437,17 +430,24 @@ jobs:
           
           echo "✅ Backup created: $BACKUP_ID"
       
-      - name: 🚀 Deploy to PRODUCTION
+      - name: 🚀 Promote TEST → PROD via Fabric Deployment Pipeline
         id: deploy
         run: |
-          echo "🚀 Deploying to PRODUCTION workspace..."
+          echo "🚀 Promoting from TEST to PRODUCTION via Fabric Deployment Pipeline..."
           echo "📋 Deployment reason: ${{ github.event.inputs.deployment_reason }}"
           echo "🎫 Change ticket: ${{ github.event.inputs.change_ticket }}"
           
           DEPLOYMENT_ID="prod-$(date +%Y%m%d-%H%M%S)"
           echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
           
-          # Deploy notebook
+          # Use Fabric Deployment Pipeline to promote Test (1) → Prod (2)
+          python scripts/trigger_fabric_deployment_pipeline.py \
+            --pipeline-id "${{ secrets.FABRIC_DEPLOYMENT_PIPELINE_ID }}" \
+            --source-stage 1 \
+            --target-stage 2 \
+            --note "PROD Release: ${{ github.event.inputs.deployment_reason }} | Ticket: ${{ github.event.inputs.change_ticket }} (Commit: ${{ github.sha }})"
+          
+          echo "✅ Promoted to PRODUCTION via Fabric deployment pipeline"
           python scripts/deploy_to_fabric.py \
             --workspace-id "${{ secrets.FABRIC_PROD_WORKSPACE_ID }}" \
             --environment prod \
