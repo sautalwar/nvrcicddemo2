@@ -88,17 +88,30 @@ class FabricDeploymentPipeline:
         Returns:
             True if deployment succeeded, False otherwise
         """
-        stage_names = {0: "Development", 1: "Test", 2: "Production"}
-        source_name = stage_names.get(source_stage_order, f"Stage {source_stage_order}")
-        target_name = stage_names.get(target_stage_order, f"Stage {target_stage_order}")
+        # Get stage IDs from pipeline
+        stages_data = self.get_pipeline_stages()
+        stages = stages_data.get('value', [])
+        
+        # Find source and target stage IDs
+        source_stage = next((s for s in stages if s.get('order') == source_stage_order), None)
+        target_stage = next((s for s in stages if s.get('order') == target_stage_order), None)
+        
+        if not source_stage or not target_stage:
+            print(f"❌ Could not find stages with order {source_stage_order} and {target_stage_order}")
+            return False
+        
+        source_stage_id = source_stage.get('id')
+        target_stage_id = target_stage.get('id')
+        source_name = source_stage.get('displayName', f'Stage {source_stage_order}')
+        target_name = target_stage.get('displayName', f'Stage {target_stage_order}')
         
         print(f"🚀 Deploying from {source_name} → {target_name}")
         
         url = f"{self.base_url}/deploymentPipelines/{self.pipeline_id}/deploy"
         
         payload = {
-            "sourceStageOrder": source_stage_order,
-            "targetStageOrder": target_stage_order,
+            "sourceStageId": source_stage_id,
+            "targetStageId": target_stage_id,
             "note": note or f"Automated deployment via GitHub Actions",
             "options": {
                 "allowCreateArtifact": True,
