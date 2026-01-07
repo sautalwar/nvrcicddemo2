@@ -13,7 +13,7 @@ This guide helps you prepare for the live demo with NVR.
 az login
 
 # Create service principal
-az ad sp create-for-rbac --name "fabric-cicd-demo" --role contributor \
+az ad sp create-for-rbac --name "nvr-cicd-demo1" --role contributor \
   --scopes /subscriptions/{subscription-id}
 
 # Note the output:
@@ -27,39 +27,81 @@ az ad sp create-for-rbac --name "fabric-cicd-demo" --role contributor \
 #### Create Fabric Workspaces
 
 1. **Create three workspaces in Fabric:**
-   - `NVR-Dev`
-   - `NVR-Test`
-   - `NVR-Production`
+   - `NVR-Dev1`
+   - `NVR-Test1`
+   - `NVR-Production1`
 
 2. **Get workspace IDs:**
    - Open each workspace in Fabric
    - URL will be: `https://app.fabric.microsoft.com/groups/{WORKSPACE_ID}/...`
    - Copy the GUID from the URL
+   - Or use the automated script: `scripts\get-fabric-workspace-ids.ps1`
 
-3. **Grant service principal access:**
+3. **Grant service principal access (Automated):**
+
+   **Option A: Using PowerShell Script (Recommended)**
+   ```powershell
+   # Run the automated script
+   .\scripts\grant-workspace-access.ps1 `
+     -ServicePrincipalId "<AZURE_CLIENT_ID>" `
+     -TenantId "<AZURE_TENANT_ID>" `
+     -WorkspaceIds @("<DEV_WORKSPACE_ID>", "<TEST_WORKSPACE_ID>", "<PROD_WORKSPACE_ID>") `
+     -Role "Admin"
+   ```
+
+   **Option B: Using Fabric REST API**
+   ```powershell
+   # See scripts\grant-workspace-access.ps1 for full implementation
+   # The script handles authentication and API calls automatically
+   ```
+
+   **Option C: Manual (Fallback)**
    - Go to Workspace Settings → Manage Access
    - Add service principal with Admin or Contributor role
    - Repeat for all three workspaces
+
+4. **Assign Fabric Capacity to Workspaces (Automated):**
+
+   **Step 1: Get your Fabric Capacity ID**
+   ```powershell
+   # List all available capacities
+   .\scripts\get-fabric-capacities.ps1 -TenantId "<AZURE_TENANT_ID>"
+   
+   # Copy the Capacity ID from the output
+   ```
+
+   **Step 2: Assign capacity to all workspaces**
+   ```powershell
+   # Assign capacity to all three workspaces at once
+   .\scripts\assign-fabric-capacity.ps1 `
+     -TenantId "<AZURE_TENANT_ID>" `
+     -CapacityId "<YOUR_FABRIC_CAPACITY_ID>" `
+     -WorkspaceIds @("<DEV_WORKSPACE_ID>", "<TEST_WORKSPACE_ID>", "<PROD_WORKSPACE_ID>")
+   ```
+
+   **Manual Alternative:**
+   - Go to Workspace Settings → Premium (Fabric)
+   - Select your Fabric capacity from dropdown
+   - Click Apply
+   - Repeat for all three workspaces
+
+   > ⚠️ **Important**: Workspaces must be assigned to a Fabric capacity to use Fabric features (notebooks, pipelines, etc.)
 
 ### 2. GitHub Repository Setup
 
 #### Fork/Create Repository
 
 ```bash
-# Option 1: Copy demo folder to new repo
-cd fabric-cicd-demo
+# Create new repository on GitHub first (nvrcicddemo1)
+# Then initialize and push from local folder
+
+cd nvr-cicd-demo1
 git init
 git add .
 git commit -m "Initial commit: Fabric CI/CD demo"
-git remote add origin https://github.com/sautalwar/nvrfabricdemo1.git
+git remote add origin https://github.com/sautalwar/nvrcicddemo1.git
+git branch -M main
 git push -u origin main
-
-# Option 2: Work in existing repo
-cd /path/to/existing/repo
-cp -r fabric-cicd-demo/* .
-git add .
-git commit -m "Add Fabric CI/CD demo"
-git push
 ```
 
 #### Configure GitHub Secrets

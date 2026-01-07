@@ -91,6 +91,44 @@ jobs:
           pytest scripts/tests/ -v --tb=short || echo "⚠️ Some tests failed"
           echo "✅ Unit tests completed"
       
+      - name: 📊 Schema Change Detection
+        id: schema_check
+        run: |
+          echo "🔍 Checking for schema changes that could break Power BI reports..."
+          
+          # Run schema detection (will exit 1 if breaking changes found)
+          if python scripts/detect_schema_changes.py \
+            --notebook model_training.Notebook/notebook-content.py \
+            --fail-on-breaking; then
+            echo "✅ No breaking schema changes detected"
+            echo "schema_status=✅ Safe" >> $GITHUB_OUTPUT
+          else
+            echo "🚨 BREAKING SCHEMA CHANGES DETECTED!"
+            echo "schema_status=🚨 Breaking" >> $GITHUB_OUTPUT
+            
+            # Comment on PR with breaking changes
+            if [ -n "${{ github.event.pull_request.number }}" ]; then
+              gh pr comment ${{ github.event.pull_request.number }} --body \
+                "## 🚨 Breaking Schema Changes Detected
+                
+                Your notebook changes will **BREAK existing Power BI reports**. 
+                
+                Please review the schema changes above and either:
+                1. ✅ Revert the breaking changes, OR
+                2. 📝 Update all affected Power BI reports before merging
+                
+                **Breaking changes include:**
+                - Removing columns that Power BI reports depend on
+                - Changing column data types (e.g., double → int)
+                - Making columns nullable (can break calculations)
+                
+                Need help? Check [SCHEMA_ANNOTATION_EXAMPLES.py](../blob/main/SCHEMA_ANNOTATION_EXAMPLES.py)"
+            fi
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
       - name: 📊 PR Validation Summary
         if: always()
         run: |
@@ -102,6 +140,7 @@ jobs:
           echo "| Notebook Validation | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| Security Scan | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| Unit Tests | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Schema Changes | ${{ steps.schema_check.outputs.schema_status }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Ready for review and merge** ✨" >> $GITHUB_STEP_SUMMARY
 

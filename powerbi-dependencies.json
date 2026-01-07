@@ -1,0 +1,132 @@
+{
+  "version": "1.0",
+  "description": "Tracks which Power BI reports depend on which notebook output tables",
+  "last_updated": "2024-12-11",
+  
+  "tables": {
+    "customers_with_churn": {
+      "source_notebook": "model_training.Notebook/notebook-content.py",
+      "description": "Customer churn prediction model output",
+      "schema": {
+        "customer_id": "string",
+        "customer_name": "string", 
+        "email": "string",
+        "lifetime_value": "double",
+        "churn_risk": "string",
+        "churn_score": "double",
+        "last_purchase_date": "date"
+      },
+      "reports": [
+        {
+          "name": "Customer 360 Dashboard",
+          "workspace": "Sales Analytics",
+          "owner": "sarah.chen@company.com",
+          "report_id": "12345678-1234-1234-1234-123456789012",
+          "columns_used": [
+            "customer_id",
+            "customer_name", 
+            "email",
+            "lifetime_value",
+            "churn_risk"
+          ],
+          "critical": true,
+          "description": "Executive dashboard - used by CEO/CFO daily"
+        },
+        {
+          "name": "Marketing Campaign Targeting",
+          "workspace": "Marketing",
+          "owner": "john.smith@company.com", 
+          "report_id": "23456789-2345-2345-2345-234567890123",
+          "columns_used": [
+            "customer_id",
+            "email",
+            "churn_risk",
+            "churn_score"
+          ],
+          "critical": false,
+          "description": "Campaign segmentation - used weekly"
+        },
+        {
+          "name": "Customer Success Metrics",
+          "workspace": "Customer Support",
+          "owner": "lisa.wong@company.com",
+          "report_id": "34567890-3456-3456-3456-345678901234", 
+          "columns_used": [
+            "customer_id",
+            "customer_name",
+            "churn_risk",
+            "last_purchase_date"
+          ],
+          "critical": true,
+          "description": "CS team dashboard - used for proactive outreach"
+        }
+      ]
+    },
+
+    "sales_forecast": {
+      "source_notebook": "sales_prediction.Notebook/notebook-content.py",
+      "description": "Sales forecasting model output",
+      "schema": {
+        "forecast_date": "date",
+        "product_id": "string",
+        "predicted_sales": "double",
+        "confidence_interval_low": "double",
+        "confidence_interval_high": "double",
+        "region": "string"
+      },
+      "reports": [
+        {
+          "name": "Sales Forecast Dashboard",
+          "workspace": "Sales Analytics",
+          "owner": "michael.brown@company.com",
+          "report_id": "45678901-4567-4567-4567-456789012345",
+          "columns_used": [
+            "forecast_date",
+            "product_id", 
+            "predicted_sales",
+            "region"
+          ],
+          "critical": true,
+          "description": "Monthly planning - used by VP Sales"
+        }
+      ]
+    },
+
+    "inventory_optimization": {
+      "source_notebook": "inventory_model.Notebook/notebook-content.py",
+      "description": "Inventory optimization recommendations",
+      "schema": {
+        "product_id": "string",
+        "warehouse_id": "string",
+        "recommended_stock_level": "int",
+        "current_stock": "int",
+        "reorder_point": "int",
+        "lead_time_days": "int"
+      },
+      "reports": [
+        {
+          "name": "Inventory Management Dashboard",
+          "workspace": "Operations",
+          "owner": "david.kim@company.com",
+          "report_id": "56789012-5678-5678-5678-567890123456",
+          "columns_used": [
+            "product_id",
+            "warehouse_id",
+            "recommended_stock_level",
+            "current_stock",
+            "reorder_point"
+          ],
+          "critical": true,
+          "description": "Daily inventory tracking - prevents stockouts"
+        }
+      ]
+    }
+  },
+
+  "metadata": {
+    "total_tables_tracked": 3,
+    "total_reports_tracked": 5,
+    "critical_reports": 4,
+    "non_critical_reports": 1
+  }
+}
