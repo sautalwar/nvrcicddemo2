@@ -50,11 +50,16 @@ def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(description="Backup Fabric workspace")
     parser.add_argument("--workspace-id", required=True, help="Fabric workspace ID")
-    parser.add_argument("--backup-path", required=True, help="Backup directory path")
+    parser.add_argument("--backup-id", required=True, help="Backup ID/timestamp")
+    parser.add_argument("--output-path", required=True, help="Backup directory path")
 
     args = parser.parse_args()
+    
+    # Create full backup path with backup ID
+    backup_path = f"{args.output_path}/{args.backup_id}"
 
-    if backup_workspace(args.workspace_id, args.backup_path):
+    if backup_workspace(args.workspace_id, backup_path):
+        print(f"✅ Backup ID: {args.backup_id}")
         sys.exit(0)
     else:
         sys.exit(1)
