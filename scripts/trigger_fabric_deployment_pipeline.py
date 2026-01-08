@@ -115,7 +115,11 @@ class FabricDeploymentPipeline:
             "note": note or f"Automated deployment via GitHub Actions",
             "options": {
                 "allowCreateArtifact": True,
-                "allowOverwriteArtifact": True
+                "allowOverwriteArtifact": True,
+                "allowPurgeData": False
+            },
+            "updateAppSettings": {
+                "allowUpdateAny": True
             }
         }
         

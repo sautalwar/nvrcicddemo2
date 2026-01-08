@@ -434,24 +434,35 @@ jobs:
           
           echo "✅ Backup step completed"
       
-      - name: 🚀 Promote TEST → PROD via Fabric Deployment Pipeline
+      - name: 🚀 Deploy to PRODUCTION workspace
         id: deploy
         run: |
-          echo "🚀 Promoting from TEST to PRODUCTION via Fabric Deployment Pipeline..."
+          echo "🚀 Deploying to PRODUCTION workspace..."
           echo "📋 Deployment reason: ${{ github.event.inputs.deployment_reason }}"
           echo "🎫 Change ticket: ${{ github.event.inputs.change_ticket }}"
           
           DEPLOYMENT_ID="prod-$(date +%Y%m%d-%H%M%S)"
           echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
           
-          # Use Fabric Deployment Pipeline to promote Test (1) → Prod (2)
-          python scripts/trigger_fabric_deployment_pipeline.py \
-            --pipeline-id "${{ secrets.FABRIC_DEPLOYMENT_PIPELINE_ID }}" \
-            --source-stage 1 \
-            --target-stage 2 \
-            --note "PROD Release: ${{ github.event.inputs.deployment_reason }} | Ticket: ${{ github.event.inputs.change_ticket }} (Commit: ${{ github.sha }})"
+          # Direct deployment to PROD workspace
+          # Note: Fabric deployment pipeline promotion via API has restrictions on conflict resolution
+          # For production stability, we deploy directly and document in notes
           
-          echo "✅ Promoted to PRODUCTION via Fabric deployment pipeline"
+          python scripts/deploy_to_fabric.py \
+            --workspace-id "${{ secrets.FABRIC_PROD_WORKSPACE_ID }}" \
+            --environment prod \
+            --artifact-type notebooks \
+            --artifacts-path ${{ env.NOTEBOOK_PATH }}
+          
+          python scripts/deploy_to_fabric.py \
+            --workspace-id "${{ secrets.FABRIC_PROD_WORKSPACE_ID }}" \
+            --environment prod \
+            --artifact-type pipelines \
+            --artifacts-path pipelines/customer_analytics_pipeline.json
+          
+          echo "✅ Deployed to PRODUCTION"
+          echo "📝 Change Ticket: ${{ github.event.inputs.change_ticket }}"
+          echo "📝 Reason: ${{ github.event.inputs.deployment_reason }}"
       
       - name: ✅ Validate PROD deployment
         continue-on-error: true
