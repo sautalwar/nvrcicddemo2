@@ -7,7 +7,6 @@ Checks that deployed artifacts match expected state
 import argparse
 import os
 import sys
-from typing import Any
 
 try:
     import requests
