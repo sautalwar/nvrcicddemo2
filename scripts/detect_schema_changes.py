@@ -231,7 +231,7 @@ def main():
     detector = SchemaChangeDetector(args.notebook)
     has_breaking_changes, changes = detector.run()
 
-    if has_breaking_changes and args.fail - on - breaking:
+    if has_breaking_changes and args.fail_on_breaking:
         print("\n❌ VALIDATION FAILED: Breaking schema changes detected")
         print("   Power BI reports may break. Please review changes.")
         sys.exit(1)

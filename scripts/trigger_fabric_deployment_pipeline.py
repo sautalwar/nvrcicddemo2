@@ -5,7 +5,6 @@ Integrates GitHub Actions with Fabric deployment pipelines
 """
 
 import argparse
-import json
 import os
 import sys
 import time
