@@ -17,7 +17,7 @@ on:
         default: false
 
 env:
-  FABRIC_WORKSPACE_NAME: 'NVR-Dev1'
+  FABRIC_WORKSPACE_NAME: 'NVR-Dev1  gh run watch 20856075750'
   ENVIRONMENT: 'dev'
 
 permissions:

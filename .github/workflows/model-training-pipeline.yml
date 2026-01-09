@@ -1,5 +1,10 @@
 name: 🚀 Model Training Pipeline - Dev → Test → Prod
 
+# Prevent concurrent runs to avoid Fabric capacity limits
+concurrency:
+  group: model-training-${{ github.event.inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
 on:
   # PR Validation
   pull_request:
@@ -227,7 +232,7 @@ jobs:
           # Trigger deployment (if pipeline exists)
           pwsh scripts/trigger-fabric-deployment-pipeline.ps1 \
             -WorkspaceId "${{ secrets.FABRIC_DEV_WORKSPACE_ID }}" \
-            -PipelineName "pipeline1" \
+            -PipelineName "pipeline2" \
             -TargetStage "Test" \
             -Note "Automated deployment from GitHub Actions - Commit ${{ github.sha }}" \
             -WaitForCompletion || echo "⚠️ Fabric deployment pipeline not configured yet"
