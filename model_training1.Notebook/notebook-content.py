@@ -57,6 +57,19 @@ display(df)
 
 # CELL ********************
 
+df = spark.read.format("csv").option("header","true").load("Files/sample_customer_data.csv")
+# df now is a Spark DataFrame containing CSV data from "Files/sample_customer_data.csv".
+display(df)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
 # Load training data from Lakehouse
 print("📂 Loading data from Lakehouse...")
 
