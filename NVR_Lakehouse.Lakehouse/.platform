@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Lakehouse",
+    "displayName": "NVR_Lakehouse"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "2362b7e7-7e86-8bbe-4cd1-99596a64ad98"
+  }
+}
