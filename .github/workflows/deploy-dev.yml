@@ -20,6 +20,11 @@ env:
   FABRIC_WORKSPACE_NAME: 'NVR-Dev1'
   ENVIRONMENT: 'dev'
 
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
 jobs:
   deploy:
     name: Deploy to Dev Workspace
