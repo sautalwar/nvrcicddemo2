@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "MLExperiment",
+    "displayName": "NVR_Customer_Churn_Prediction"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "5f174a47-c4c0-b312-44dc-3fac2c609bb5"
+  }
+}
