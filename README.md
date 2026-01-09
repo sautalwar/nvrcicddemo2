@@ -10,6 +10,7 @@ Demonstrate enterprise-grade CI/CD for Data Science teams using Microsoft Fabric
 - ✅ Approval gates and change management
 - ✅ Rollback capabilities
 - ✅ Full audit trail
+- ✅ Model and data quality evaluation framework
 
 ## 📁 Repository Structure
 
@@ -33,6 +34,9 @@ fabric-cicd-demo/
 │   ├── validate_pipelines.py   # Pipeline JSON validation
 │   ├── deploy_to_fabric.py     # Main deployment script
 │   ├── validate_deployment.py  # Post-deployment validation
+│   ├── evaluate_model.py       # Model performance evaluation
+│   ├── evaluate_data_quality.py # Data quality assessment
+│   ├── run_evaluation.py       # Complete evaluation suite
 │   ├── run_integration_tests.py
 │   ├── run_smoke_tests.py
 │   ├── backup_workspace.py
@@ -83,6 +87,9 @@ python scripts/validate_notebooks.py
 
 # Validate pipelines locally
 python scripts/validate_pipelines.py
+
+# Run evaluation framework
+python scripts/run_evaluation.py
 ```
 
 ## 📋 CI/CD Workflow
@@ -320,6 +327,64 @@ Track these metrics during POC:
 | Manual steps per deployment | 15 | 2 | **87% reduction** |
 | Deployment errors | High | Low | **Fewer rollbacks** |
 | Audit compliance | Manual | Automatic | **100% traceable** |
+
+## 📊 Evaluation Framework
+
+The workspace includes a comprehensive evaluation framework for model and data quality assessment.
+
+### Quick Start
+
+```bash
+# Run complete evaluation suite
+python scripts/run_evaluation.py
+```
+
+### Key Features
+
+- **Model Evaluation**: Accuracy, Precision, Recall, F1-Score, ROC-AUC, Cross-validation
+- **Data Quality**: Completeness, Uniqueness, Consistency, Accuracy, Timeliness, Validity
+- **Performance Thresholds**: Automated quality gates for model acceptance
+- **Comprehensive Reports**: JSON reports saved to `reports/` directory
+
+### Usage Examples
+
+**Evaluate Model Performance:**
+```python
+from scripts.evaluate_model import ModelEvaluator
+
+evaluator = ModelEvaluator(model, X_test, y_test, X_train, y_train)
+evaluator.predict()
+evaluator.calculate_classification_metrics()
+evaluator.evaluate_model_robustness()
+evaluator.check_performance_thresholds()
+evaluator.print_report()
+evaluator.save_report('reports/model_evaluation.json')
+```
+
+**Evaluate Data Quality:**
+```python
+from scripts.evaluate_data_quality import DataQualityEvaluator
+
+evaluator = DataQualityEvaluator(df, 'Customer Data')
+evaluator.check_completeness(null_threshold=0.05)
+evaluator.check_uniqueness(['customer_id'])
+evaluator.print_report()
+```
+
+### Default Thresholds
+
+**Model Performance:**
+- Accuracy: ≥70%
+- Precision: ≥65%
+- Recall: ≥60%
+- F1-Score: ≥65%
+
+**Data Quality:**
+- Completeness: <5% missing values
+- Uniqueness: 0 duplicates for key columns
+- Consistency: 100% compliance with business rules
+
+For detailed documentation, see [EVALUATION_FRAMEWORK.md](EVALUATION_FRAMEWORK.md)
 
 ## 🛠️ Troubleshooting
 
