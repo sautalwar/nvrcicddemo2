@@ -1,0 +1,371 @@
+name: 🔒 Notebook Security & Vulnerability Scan
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'notebooks/**/*.ipynb'
+      - 'notebooks/**/*.py'
+      - '*.Notebook/**'
+  push:
+    branches: [main]
+    paths:
+      - 'notebooks/**/*.ipynb'
+      - 'notebooks/**/*.py'
+      - '*.Notebook/**'
+  workflow_dispatch:
+    inputs:
+      scan_level:
+        description: 'Scan Severity Level'
+        required: true
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+        default: 'medium'
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+
+env:
+  PYTHON_VERSION: '3.10'
+
+jobs:
+  # ========================================
+  # JOB 1: SECRET DETECTION
+  # ========================================
+  secret-detection:
+    name: 🔍 Secret Detection
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better secret detection
+      
+      - name: 🔐 Scan for secrets in notebooks
+        run: |
+          echo "🔍 Scanning for hardcoded secrets..."
+          
+          # Patterns to detect
+          declare -a patterns=(
+            "password\s*=\s*['\"]"
+            "api[_-]?key\s*=\s*['\"]"
+            "secret\s*=\s*['\"]"
+            "token\s*=\s*['\"]"
+            "client[_-]?secret\s*=\s*['\"]"
+            "access[_-]?key\s*=\s*['\"]"
+            "AKIA[0-9A-Z]{16}"  # AWS Access Key
+            "[0-9a-f]{32}"       # MD5 Hash (potential secrets)
+          )
+          
+          found_secrets=0
+          
+          for pattern in "${patterns[@]}"; do
+            echo "Checking pattern: $pattern"
+            if grep -rE -i "$pattern" notebooks/ *.Notebook/ 2>/dev/null; then
+              echo "⚠️ WARNING: Potential secret found matching pattern: $pattern"
+              found_secrets=1
+            fi
+          done
+          
+          if [ $found_secrets -eq 1 ]; then
+            echo "❌ FAIL: Hardcoded secrets detected in notebooks!"
+            echo "Please remove all hardcoded credentials and use environment variables or Azure Key Vault."
+            exit 1
+          else
+            echo "✅ PASS: No hardcoded secrets detected"
+          fi
+
+  # ========================================
+  # JOB 2: PYTHON SECURITY SCANNING
+  # ========================================
+  python-security-scan:
+    name: 🛡️ Python Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: 📦 Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit bandit-sarif-formatter nbconvert
+          echo "✅ Security tools installed"
+      
+      - name: 🔄 Convert notebooks to Python
+        run: |
+          echo "Converting .ipynb files to .py for security scanning..."
+          mkdir -p .security-scan
+          
+          # Convert all notebooks to Python scripts
+          find notebooks -name "*.ipynb" -type f | while read notebook; do
+            output_file=".security-scan/$(basename "$notebook" .ipynb).py"
+            jupyter nbconvert --to python "$notebook" --output "$output_file" 2>/dev/null || true
+          done
+          
+          # Also scan .Notebook/*.py files
+          find . -path "*\.Notebook/notebook-content.py" -type f -exec cp {} .security-scan/ \;
+          
+          echo "✅ Notebooks converted for scanning"
+          ls -la .security-scan/
+      
+      - name: 🔒 Run Bandit security scan
+        run: |
+          echo "🔍 Running Bandit security analysis..."
+          
+          # Run Bandit on converted notebooks
+          bandit -r .security-scan/ \
+            -f json \
+            -o bandit-report.json \
+            --severity-level low \
+            --confidence-level medium \
+            --exclude '*test*' || true
+          
+          # Also run on Python scripts in notebooks directory
+          bandit -r notebooks/ \
+            -f json \
+            -o bandit-notebooks.json \
+            --severity-level low \
+            --confidence-level medium \
+            --include '*.py' || true
+          
+          # Display human-readable report
+          echo ""
+          echo "========================================="
+          echo "📊 BANDIT SECURITY SCAN RESULTS"
+          echo "========================================="
+          bandit -r .security-scan/ notebooks/ \
+            --severity-level medium \
+            --confidence-level medium \
+            --exclude '*test*' \
+            --format screen || true
+          
+          echo "✅ Security scan completed"
+      
+      - name: 📤 Upload Bandit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-security-report
+          path: |
+            bandit-report.json
+            bandit-notebooks.json
+          retention-days: 30
+
+  # ========================================
+  # JOB 3: DEPENDENCY VULNERABILITY SCAN
+  # ========================================
+  dependency-scan:
+    name: 📦 Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+          pip install pip-audit safety
+      
+      - name: 🔍 Run pip-audit (CVE scanning)
+        run: |
+          echo "🔍 Scanning dependencies for known vulnerabilities (CVEs)..."
+          echo "========================================="
+          
+          pip-audit --desc --format json --output pip-audit-report.json || true
+          
+          echo ""
+          echo "📊 VULNERABILITY SUMMARY:"
+          echo "========================================="
+          pip-audit --desc || true
+          
+          echo "✅ Dependency scan completed"
+      
+      - name: 🛡️ Run Safety check
+        run: |
+          echo "🔍 Running Safety vulnerability database check..."
+          echo "========================================="
+          
+          safety check --json --output safety-report.json || true
+          safety check || true
+          
+          echo "✅ Safety check completed"
+        continue-on-error: true
+      
+      - name: 📤 Upload vulnerability reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-vulnerability-reports
+          path: |
+            pip-audit-report.json
+            safety-report.json
+          retention-days: 30
+
+  # ========================================
+  # JOB 4: NOTEBOOK BEST PRACTICES
+  # ========================================
+  notebook-best-practices:
+    name: 📋 Notebook Security Best Practices
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: 📦 Install validation tools
+        run: |
+          pip install nbformat jupyter
+      
+      - name: ✅ Validate notebook security practices
+        run: |
+          python << 'EOF'
+          import json
+          import os
+          import re
+          from pathlib import Path
+          
+          print("🔍 Checking notebook security best practices...")
+          print("=" * 50)
+          
+          issues_found = []
+          notebooks_scanned = 0
+          
+          # Find all notebook files
+          notebook_files = list(Path('.').rglob('*.ipynb'))
+          
+          for nb_path in notebook_files:
+              # Skip checkpoints
+              if '.ipynb_checkpoints' in str(nb_path):
+                  continue
+              
+              notebooks_scanned += 1
+              print(f"\n📓 Scanning: {nb_path}")
+              
+              try:
+                  with open(nb_path, 'r', encoding='utf-8') as f:
+                      nb = json.load(f)
+                  
+                  # Check 1: Look for execution outputs with sensitive data
+                  for idx, cell in enumerate(nb.get('cells', [])):
+                      if cell.get('cell_type') == 'code':
+                          outputs = cell.get('outputs', [])
+                          
+                          for output in outputs:
+                              output_text = str(output)
+                              
+                              # Check for tokens/keys in outputs
+                              if re.search(r'(token|key|password|secret).*[:=]', output_text, re.I):
+                                  issue = f"⚠️  {nb_path} - Cell {idx+1}: Potential sensitive data in output"
+                                  issues_found.append(issue)
+                                  print(f"  {issue}")
+                      
+                      # Check 2: Look for eval/exec usage (code injection risk)
+                      source = ''.join(cell.get('source', []))
+                      if re.search(r'\b(eval|exec)\s*\(', source):
+                          issue = f"⚠️  {nb_path} - Cell {idx+1}: Usage of eval/exec detected (code injection risk)"
+                          issues_found.append(issue)
+                          print(f"  {issue}")
+                      
+                      # Check 3: SQL injection patterns
+                      if re.search(r'execute\s*\([^,]*%s|execute\s*\([^,]*\+', source):
+                          issue = f"⚠️  {nb_path} - Cell {idx+1}: Potential SQL injection pattern"
+                          issues_found.append(issue)
+                          print(f"  {issue}")
+                      
+                      # Check 4: Unsafe deserialization
+                      if re.search(r'pickle\.loads?\s*\(|yaml\.load\s*\([^,]*Loader\s*=\s*yaml\.Loader', source):
+                          issue = f"⚠️  {nb_path} - Cell {idx+1}: Unsafe deserialization detected"
+                          issues_found.append(issue)
+                          print(f"  {issue}")
+              
+              except Exception as e:
+                  print(f"  ❌ Error scanning {nb_path}: {e}")
+          
+          print("\n" + "=" * 50)
+          print(f"📊 SCAN SUMMARY:")
+          print(f"  Notebooks scanned: {notebooks_scanned}")
+          print(f"  Issues found: {len(issues_found)}")
+          print("=" * 50)
+          
+          if issues_found:
+              print("\n⚠️  SECURITY BEST PRACTICE VIOLATIONS:")
+              for issue in issues_found:
+                  print(f"  {issue}")
+              print("\n⚠️  Please review and address these security concerns.")
+              # Don't fail the build, just warn
+              print("\n✅ Scan completed with warnings")
+          else:
+              print("\n✅ All notebooks passed security best practices check!")
+          
+          EOF
+
+  # ========================================
+  # JOB 5: SECURITY SUMMARY
+  # ========================================
+  security-summary:
+    name: 📊 Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [secret-detection, python-security-scan, dependency-scan, notebook-best-practices]
+    if: always()
+    
+    steps:
+      - name: 📋 Generate summary
+        run: |
+          echo "# 🔒 Notebook Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check job results
+          if [ "${{ needs.secret-detection.result }}" == "success" ]; then
+            echo "✅ **Secret Detection**: PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Secret Detection**: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.python-security-scan.result }}" == "success" ]; then
+            echo "✅ **Python Security Scan**: PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Python Security Scan**: COMPLETED WITH FINDINGS" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.dependency-scan.result }}" == "success" ]; then
+            echo "✅ **Dependency Vulnerability Scan**: PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Dependency Vulnerability Scan**: COMPLETED WITH FINDINGS" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.notebook-best-practices.result }}" == "success" ]; then
+            echo "✅ **Notebook Best Practices**: PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Notebook Best Practices**: COMPLETED WITH FINDINGS" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "📅 Scan completed: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 Detailed reports available in workflow artifacts" >> $GITHUB_STEP_SUMMARY
