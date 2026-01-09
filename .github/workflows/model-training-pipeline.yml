@@ -79,7 +79,7 @@ jobs:
       
       - name: 🔐 Check for hardcoded secrets
         run: |
-          if grep -r -E '(password|api[_-]?key|secret|token)\s*=\s*["\'][^"\']+["\']' \
+          if grep -r -E "(password|api[_-]?key|secret|token)\s*=\s*[\"'][^\"']+[\"']" \
              ${{ env.NOTEBOOK_PATH }} check_data_quality.py --exclude-dir=.git 2>/dev/null; then
             echo "❌ Potential secrets found!"
             exit 1
