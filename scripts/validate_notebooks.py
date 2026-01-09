@@ -7,7 +7,7 @@ Checks notebook structure, metadata, and code quality
 import json
 import sys
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Any
 import nbformat
 
 

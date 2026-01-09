@@ -36,6 +36,17 @@ wheels/
 .env.local
 .env.*.local
 
+# Secrets and credentials (NEVER commit these!)
+**/secrets.json
+**/credentials.json
+**/service-account*.json
+**/*secret*.txt
+**/*credential*.txt
+**/*password*.txt
+workspace-ids.txt
+azure-credentials.txt
+.azure-credentials
+
 # Logs
 *.log
 logs/

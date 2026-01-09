@@ -95,8 +95,9 @@ display(df)
 # Feature engineering
 print("🔧 Engineering features...")
 
-data['purchase_frequency'] = data['total_purchases'] / (data['customer_age_days'] / 30)
-data['engagement_score'] = (data['total_purchases'] * data['avg_purchase_value']) / data['customer_age_days']
+# Prevent division by zero for new customers (customer_age_days = 0)
+data['purchase_frequency'] = data['total_purchases'] / np.maximum(data['customer_age_days'] / 30, 1)
+data['engagement_score'] = (data['total_purchases'] * data['avg_purchase_value']) / np.maximum(data['customer_age_days'], 1)
 data['recency_score'] = 1 / (data['days_since_last_purchase'] + 1)
 
 feature_columns = [

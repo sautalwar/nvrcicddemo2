@@ -54,7 +54,7 @@ def main():
     parser.add_argument("--output-path", required=True, help="Backup directory path")
 
     args = parser.parse_args()
-    
+
     # Create full backup path with backup ID
     backup_path = f"{args.output_path}/{args.backup_id}"
 

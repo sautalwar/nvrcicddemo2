@@ -1,0 +1,159 @@
+{
+  "evaluation_timestamp": "2026-01-08T18:17:58.551751",
+  "data_name": "Customer Churn Dataset",
+  "dataset_shape": [
+    100,
+    7
+  ],
+  "total_checks": 19,
+  "passed_checks": 19,
+  "failed_checks": 0,
+  "success_rate": 1.0,
+  "checks": {
+    "completeness": {
+      "customer_id": {
+        "null_count": 0,
+        "null_percentage": 0.0,
+        "threshold": 0.05,
+        "passed": "True"
+      },
+      "total_purchases": {
+        "null_count": 0,
+        "null_percentage": 0.0,
+        "threshold": 0.05,
+        "passed": "True"
+      },
+      "avg_purchase_value": {
+        "null_count": 0,
+        "null_percentage": 0.0,
+        "threshold": 0.05,
+        "passed": "True"
+      },
+      "days_since_last_purchase": {
+        "null_count": 0,
+        "null_percentage": 0.0,
+        "threshold": 0.05,
+        "passed": "True"
+      },
+      "customer_age_days": {
+        "null_count": 0,
+        "null_percentage": 0.0,
+        "threshold": 0.05,
+        "passed": "True"
+      },
+      "support_tickets": {
+        "null_count": 0,
+        "null_percentage": 0.0,
+        "threshold": 0.05,
+        "passed": "True"
+      },
+      "churn": {
+        "null_count": 0,
+        "null_percentage": 0.0,
+        "threshold": 0.05,
+        "passed": "True"
+      }
+    },
+    "uniqueness": {
+      "customer_id": {
+        "total_rows": 100,
+        "unique_values": 100,
+        "duplicate_count": 0,
+        "passed": true
+      }
+    },
+    "consistency": {
+      "total_purchases_positive": {
+        "violations": 0,
+        "violation_percentage": 0.0,
+        "passed": true
+      },
+      "avg_purchase_positive": {
+        "violations": 0,
+        "violation_percentage": 0.0,
+        "passed": true
+      },
+      "days_positive": {
+        "violations": 0,
+        "violation_percentage": 0.0,
+        "passed": true
+      },
+      "age_positive": {
+        "violations": 0,
+        "violation_percentage": 0.0,
+        "passed": true
+      },
+      "churn_binary": {
+        "violations": 0,
+        "violation_percentage": 0.0,
+        "passed": true
+      }
+    },
+    "accuracy": {
+      "total_purchases": {
+        "expected_range": "[0, 1000]",
+        "actual_min": 5.0,
+        "actual_max": 48.0,
+        "violations": 0,
+        "passed": true
+      },
+      "avg_purchase_value": {
+        "expected_range": "[0, 10000]",
+        "actual_min": 40.25,
+        "actual_max": 490.25,
+        "violations": 0,
+        "passed": true
+      },
+      "days_since_last_purchase": {
+        "expected_range": "[0, 3650]",
+        "actual_min": 2.0,
+        "actual_max": 200.0,
+        "violations": 0,
+        "passed": true
+      },
+      "customer_age_days": {
+        "expected_range": "[0, 36500]",
+        "actual_min": 120.0,
+        "actual_max": 1220.0,
+        "violations": 0,
+        "passed": true
+      },
+      "support_tickets": {
+        "expected_range": "[0, 100]",
+        "actual_min": 0.0,
+        "actual_max": 6.0,
+        "violations": 0,
+        "passed": true
+      },
+      "churn": {
+        "expected_range": "[0, 1]",
+        "actual_min": 0.0,
+        "actual_max": 1.0,
+        "violations": 0,
+        "passed": true
+      }
+    }
+  },
+  "passed": [
+    "Completeness: customer_id",
+    "Completeness: total_purchases",
+    "Completeness: avg_purchase_value",
+    "Completeness: days_since_last_purchase",
+    "Completeness: customer_age_days",
+    "Completeness: support_tickets",
+    "Completeness: churn",
+    "Uniqueness: customer_id",
+    "Consistency: total_purchases_positive",
+    "Consistency: avg_purchase_positive",
+    "Consistency: days_positive",
+    "Consistency: age_positive",
+    "Consistency: churn_binary",
+    "Accuracy: total_purchases",
+    "Accuracy: avg_purchase_value",
+    "Accuracy: days_since_last_purchase",
+    "Accuracy: customer_age_days",
+    "Accuracy: support_tickets",
+    "Accuracy: churn"
+  ],
+  "failed": []
+}

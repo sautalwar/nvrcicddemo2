@@ -1,4 +1,3 @@
-# Sample pipeline definition
 {
   "name": "Customer Analytics Pipeline",
   "properties": {

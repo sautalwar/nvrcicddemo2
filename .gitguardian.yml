@@ -1,0 +1,41 @@
+# GitGuardian configuration for secret scanning
+# This file configures what GitGuardian should scan and what to ignore
+
+version: 2
+
+# Paths to exclude from secret scanning
+paths-ignore:
+  - "**/*.md"           # Documentation files (may contain example formats)
+  - "**/DEMO_SCRIPT.md" # Demo documentation
+  - "**/*.yml.example"  # Example configuration files
+  - "**/*.json.example" # Example JSON files
+  - "**/LICENSE"        # License files
+  - "**/.gitignore"     # Git ignore files
+
+# Specific secrets to ignore (documented non-sensitive GUIDs)
+# These are Fabric workspace/lakehouse IDs which are not secrets by themselves
+# They are safe to commit as they require authentication to access
+matches-ignore:
+  - name: Fabric Lakehouse ID in notebook metadata (non-sensitive)
+    match: f1da9f0b-0c17-407e-a5f6-853ae0065c26
+  - name: Fabric Workspace ID in notebook metadata (non-sensitive)
+    match: d44744bc-d9d8-4cd1-a044-bab24399b67d
+
+# Minimum occurrences before alerting (helps reduce false positives)
+minimum_occurrences: 1
+
+# Enable severity levels
+severity:
+  critical: true
+  high: true
+  medium: true
+  low: false
+
+# NOTE: Fabric workspace IDs and lakehouse IDs are NOT secrets
+# They are resource identifiers similar to Azure resource IDs
+# Access to these resources requires proper authentication (Service Principal)
+# The actual secrets are stored in GitHub Secrets:
+# - AZURE_CLIENT_ID
+# - AZURE_CLIENT_SECRET
+# - AZURE_TENANT_ID
+# - FABRIC_*_WORKSPACE_ID (for CI/CD automation only)

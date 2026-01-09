@@ -17,7 +17,7 @@ on:
         default: false
 
 env:
-  FABRIC_WORKSPACE_NAME: 'NVR-Dev'
+  FABRIC_WORKSPACE_NAME: 'NVR-Dev1'
   ENVIRONMENT: 'dev'
 
 jobs:

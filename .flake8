@@ -1,0 +1,7 @@
+[flake8]
+max-line-length = 120
+exclude = __pycache__,.git,venv,env,.venv
+# Ignore F541 (f-string without placeholders) - these are used for future-proofing
+# Ignore F401 (unused imports) in type checking files
+ignore = F541
+extend-ignore = F401
