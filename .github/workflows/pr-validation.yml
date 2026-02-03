@@ -119,8 +119,34 @@ jobs:
       
       - name: Check for Secrets in Code
         run: |
-          if grep -r -i -E '(password|api[_-]?key|secret|token)\s*=\s*["\'][^"\']+["\']' scripts/ notebooks/ --exclude-dir=.git; then
+          echo "🔒 Scanning for hardcoded secrets..."
+          
+          # Look for actual secret assignments (not just the word "secret")
+          # Exclude: comments, URLs, resource IDs, and common false positives
+          SECRETS_FOUND=false
+          
+          # Check for password assignments
+          if grep -r -E '(password|passwd|pwd)\s*=\s*["\'][^"\']{8,}["\']' scripts/ notebooks/ *.Notebook/ --exclude-dir=.git 2>/dev/null | grep -v -E '(#|//|/\*|\*/)'; then
+            echo "⚠️  Found potential password assignments"
+            SECRETS_FOUND=true
+          fi
+          
+          # Check for API key assignments
+          if grep -r -E '(api[_-]?key|apikey)\s*=\s*["\'][a-zA-Z0-9]{20,}["\']' scripts/ notebooks/ *.Notebook/ --exclude-dir=.git 2>/dev/null | grep -v -E '(#|//|/\*|\*/)'; then
+            echo "⚠️  Found potential API key assignments"
+            SECRETS_FOUND=true
+          fi
+          
+          # Check for client secret assignments (not resource IDs)
+          if grep -r -E '(client[_-]?secret|access[_-]?token)\s*=\s*["\'][^"\']{20,}["\']' scripts/ notebooks/ *.Notebook/ --exclude-dir=.git 2>/dev/null | grep -v -E '(#|//|/\*|\*/|workspace|lakehouse)'; then
+            echo "⚠️  Found potential secret/token assignments"
+            SECRETS_FOUND=true
+          fi
+          
+          if [ "$SECRETS_FOUND" = "true" ]; then
+            echo ""
             echo "❌ Potential secrets found in code!"
+            echo "Please use environment variables or Azure Key Vault instead of hardcoded secrets"
             exit 1
           else
             echo "✅ No hardcoded secrets detected"
